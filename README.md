@@ -14,14 +14,14 @@ pip install pdfrw
 Running the script as a Service through Automator requires using the OS default Python installation `/usr/bin/python`. The dependency can be installed using easy_install but requires super user privileges.
 
 ```bash
-sudo easy_install pdfrw
+sudo /usr/bin/easy_install pdfrw
 ```
 
 ## Automator Service
 
 Doubleclick on the workflow and it should allow you to install it as a Service. If this does not work, follow these steps:
 
-1. open the Workflow in Automator.app
+1. Open the Workflow in Automator.app
 1. Via the Menu: `File` -> `Convert to...` -> `Service`
 1. At the top of the Workflow, choose `Accepts PDF Files` and `Finder.app`
 
