@@ -7,7 +7,7 @@ import pdfrw
 
 logging.basicConfig(
     format='%(levelname)s:%(message)s',
-    level=logging.DEBUG)
+    level=logging.INFO)
 
 
 def parse_arguments():
