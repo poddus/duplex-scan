@@ -4,6 +4,7 @@ from argparse import ArgumentParser
 import os
 import pdfrw
 
+
 def parse_arguments():
     parser = ArgumentParser(
         description='Sort the pages of a PDF file '
