@@ -17,23 +17,33 @@ def parse_arguments():
         help='Path(s) to PDF file(s) to be processed. Input either two files, odd pages first, even pages second '
              'or a single file with both.'
     )
+    parser.add_argument(
+        '-k', '--keep',
+        action='store_true',
+        help='keep input files and create a new file as output.'
+    )
     return parser.parse_args()
 
 
-def main(input_paths):
-    if len(input_paths) > 2:
+def main(args):
+    if len(args.input_paths) > 2:
         raise ValueError('program only accepts 1 or 2 files')
 
-    input_file_basename = os.path.basename(input_paths[0])
-    output_path = '{}-sorted{}'.format(
-        os.path.splitext(input_file_basename)[0],
-        os.path.splitext(input_file_basename)[1]
-    )
+    input_file_basename = os.path.basename(args.input_paths[0])
+
+    if args.keep:
+        output_path = '{}-sorted{}'.format(
+            os.path.splitext(input_file_basename)[0],
+            os.path.splitext(input_file_basename)[1]
+        )
+    else:
+        output_path = input_file_basename
+
     out_data = pdfrw.PdfWriter(output_path)
 
-    if len(input_paths) == 2:
-        odd_data = pdfrw.PdfReader(input_paths[0])
-        even_data = pdfrw.PdfReader(input_paths[1])
+    if len(args.input_paths) == 2:
+        odd_data = pdfrw.PdfReader(args.input_paths[0])
+        even_data = pdfrw.PdfReader(args.input_paths[1])
 
         if len(odd_data.pages) != len(even_data.pages):
             raise RuntimeError(
@@ -47,9 +57,8 @@ def main(input_paths):
             out_data.addpage(odd_data.pages[current_odd_page])
             out_data.addpage((even_data.pages[current_even_page.pop()]))  # in practice .pop() reverses the list
 
-        out_data.write()
-    elif len(input_paths) == 1:
-        in_data = pdfrw.PdfReader(input_paths[0])
+    elif len(args.input_paths) == 1:
+        in_data = pdfrw.PdfReader(args.input_paths[0])
 
         if len(in_data.pages) % 2 != 0:
             raise RuntimeError(
@@ -72,9 +81,11 @@ def main(input_paths):
         for page in sorted_pages:
             out_data.addpage(in_data.pages[page])
 
-        out_data.write()
-
+    out_data.write()
+    if not args.keep:
+        for path in args.input_paths:
+            os.remove(path)
 
 if __name__ == '__main__':
     args = parse_arguments()
-    main(args.input_paths)
+    main(args)
