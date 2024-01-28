@@ -37,7 +37,7 @@ def main(args):
             os.path.splitext(input_file_basename)[1]
         )
     else:
-        output_path = input_file_basename
+        output_path = 'sorted.pdf'
 
     out_data = pdfrw.PdfWriter(output_path)
 
