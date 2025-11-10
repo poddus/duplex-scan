@@ -2,7 +2,7 @@
 
 from argparse import ArgumentParser
 import os
-import pdfrw
+import pypdf
 
 
 def parse_arguments():
@@ -14,8 +14,8 @@ def parse_arguments():
     parser.add_argument(
         'input_paths',
         nargs='+',
-        help='Path(s) to PDF file(s) to be processed. Input either two files, odd pages first, even pages second '
-             'or a single file with both.'
+        help='Paths to two PDF files to be processed. '
+             'Input odd pages first, even pages second.'
     )
     parser.add_argument(
         '-k', '--keep',
@@ -26,10 +26,33 @@ def parse_arguments():
 
 
 def main(args):
-    if len(args.input_paths) > 2:
-        raise ValueError('program only accepts 1 or 2 files')
+
+    if len(args.input_paths) != 2:
+        raise ValueError('program only accepts 2 files')
 
     input_file_basename = os.path.basename(args.input_paths[0])
+
+    output_data = pypdf.PdfWriter()
+
+    if len(args.input_paths) == 2:
+        input_data_odd = pypdf.PdfReader(args.input_paths[0])
+        input_data_even = pypdf.PdfReader(args.input_paths[1])
+
+        if len(input_data_odd.pages) != len(input_data_even.pages):
+            raise RuntimeError(
+                'The number of pages in the input files are unequal. '
+                'Something must have gone wrong during the scan. '
+                'Please check the input files and try again.'
+            )
+
+        output_data.append(input_data_odd)
+        position = 1
+        for page in reversed(list(range(0, len(input_data_even.pages)))):
+            output_data.merge(
+                position=position,
+                fileobj=input_data_even,
+                pages=([page]))
+            position += 2
 
     if args.keep:
         output_path = '{}-sorted{}'.format(
@@ -39,52 +62,12 @@ def main(args):
     else:
         output_path = 'sorted.pdf'
 
-    out_data = pdfrw.PdfWriter(output_path)
+    output_data.write(output_path)
 
-    if len(args.input_paths) == 2:
-        odd_data = pdfrw.PdfReader(args.input_paths[0])
-        even_data = pdfrw.PdfReader(args.input_paths[1])
-
-        if len(odd_data.pages) != len(even_data.pages):
-            raise RuntimeError(
-                'The number of pages in the input files are unequal. '
-                'Something probable went wrong during the scan. Please check the '
-                'input files and try again.'
-            )
-
-        current_even_page = list(range(0, len(even_data.pages)))
-        for current_odd_page in range(0, len(odd_data.pages)):
-            out_data.addpage(odd_data.pages[current_odd_page])
-            out_data.addpage((even_data.pages[current_even_page.pop()]))  # in practice .pop() reverses the list
-
-    elif len(args.input_paths) == 1:
-        in_data = pdfrw.PdfReader(args.input_paths[0])
-
-        if len(in_data.pages) % 2 != 0:
-            raise RuntimeError(
-                'There are an uneven number of pages in the PDF file. '
-                'Something must have gone wrong during the scan. Please check the '
-                'input file and try again.'
-            )
-
-        all_pages = len(in_data.pages)
-        half_pages = all_pages // 2
-        odd_pages = list(range(0, half_pages))
-
-        even_pages = list(reversed(range(half_pages, all_pages)))
-
-        sorted_pages = []
-        for page in range(0, half_pages):
-            sorted_pages.append(odd_pages[page])
-            sorted_pages.append(even_pages[page])
-
-        for page in sorted_pages:
-            out_data.addpage(in_data.pages[page])
-
-    out_data.write()
     if not args.keep:
         for path in args.input_paths:
             os.remove(path)
+
 
 if __name__ == '__main__':
     args = parse_arguments()
